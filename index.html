@@ -19,7 +19,7 @@
             <div class="space-x-4">
                 <button onclick="showPanel('owner')" class="hover:underline">Truck Owner</button>
                 <button onclick="showPanel('client')" class="hover:underline">Bidders</button>
-                <button onclick="showPanel('admin')" class="hover:underline text-yellow-400 font-bold">Admin Portal</button>
+<button onclick="adminLogin()" class="hover:underline text-yellow-400 font-bold">Admin Portal</button>
             </div>
         </div>
     </nav>
@@ -54,83 +54,42 @@
     </div>
 
     <script>
-        let trips = [];
-        let bids = [];
+        const supabaseUrl = 'https://ycqlverxbwwiofawsklz.supabase.co';
+const supabaseKey = 'sb_publishable_BXQX7T9ksQNCJrg5DGWcyg_ugWHTUPv';
+const supabase = supabasejs.createClient(supabaseUrl, supabaseKey);
 
-        function showPanel(id) {
-            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            renderClientView();
-            renderAdminView();
-        }
+// LOGIN LOGIC FOR ADMIN
+async function adminLogin() {
+    const password = prompt("Enter Admin Password:");
+    if (password === "Intellog2026") { // Hardcoded for simplicity
+        showPanel('admin');
+    } else {
+        alert("Access Denied");
+    }
+}
 
-        function listTruck() {
-            const trip = {
-                id: Date.now(),
-                truck: document.getElementById('truckNo').value,
-                vol: parseFloat(document.getElementById('maxVol').value),
-                price: document.getElementById('floorPrice').value,
-                deadline: document.getElementById('deadline').value
-            };
-            trips.push(trip);
-            alert("Truck listed successfully on Intellog OS!");
-            showPanel('client');
-        }
+// SAVE TRUCK TO DATABASE
+async function listTruck() {
+    const { data, error } = await supabase.from('trucks').insert([{
+        truck_no: document.getElementById('truckNo').value,
+        volume: document.getElementById('maxVol').value,
+        floor_price: document.getElementById('floorPrice').value,
+        deadline: document.getElementById('deadline').value
+    }]);
+    if (error) alert("Error saving truck");
+    else alert("Truck saved to database!");
+}
 
-        function submitBid(tripId) {
-            const bid = {
-                id: Date.now(),
-                tripId: tripId,
-                company: prompt("Enter your Company Name:"),
-                reqVol: parseFloat(prompt("Required Volume (cu.ft):")),
-                amount: parseFloat(prompt("Your Secret Bid Amount (₹):")),
-                status: 'Pending'
-            };
-            bids.push(bid);
-            alert("Blind tender submitted to Intellog OS.");
-        }
-
-        function renderClientView() {
-            const list = document.getElementById('availableTrucksList');
-            list.innerHTML = trips.map(t => `
-                <div class="border p-4 rounded flex justify-between items-center bg-gray-50">
-                    <div>
-                        <p class="font-bold">Truck: ${t.truck}</p>
-                        <p class="text-sm text-gray-600">Space: ${t.vol} cu.ft | Ends: ${t.deadline}</p>
-                    </div>
-                    <button onclick="submitBid(${t.id})" class="bg-green-600 text-white px-4 py-2 rounded">Place Bid</button>
-                </div>
-            `).join('');
-        }
-
-        function renderAdminView() {
-            const view = document.getElementById('adminBidsView');
-            view.innerHTML = trips.map(t => {
-                const truckBids = bids.filter(b => b.tripId === t.id);
-                return `
-                    <div class="mb-8 border-l-4 border-blue-900 pl-4">
-                        <h3 class="font-bold text-lg">Management for ${t.truck} (${t.vol} cu.ft)</h3>
-                        <table class="w-full mt-2 border-collapse text-sm">
-                            <tr class="bg-gray-200">
-                                <th class="border p-2">Bidder</th>
-                                <th class="border p-2">Volume</th>
-                                <th class="border p-2">Price</th>
-                                <th class="border p-2">Select</th>
-                            </tr>
-                            ${truckBids.map(b => `
-                                <tr>
-                                    <td class="border p-2">${b.company}</td>
-                                    <td class="border p-2">${b.reqVol}</td>
-                                    <td class="border p-2">₹${b.amount}</td>
-                                    <td class="border p-2 text-center"><input type="checkbox"></td>
-                                </tr>
-                            `).join('')}
-                        </table>
-                        <button class="mt-2 bg-blue-900 text-white px-3 py-1 rounded text-xs">Finalize Selection</button>
-                    </div>
-                `;
-            }).join('');
-        }
+// SAVE BID TO DATABASE
+async function submitBid(truckId) {
+    const { error } = await supabase.from('bids').insert([{
+        truck_id: truckId,
+        company_name: prompt("Company Name:"),
+        req_volume: prompt("Volume:"),
+        bid_amount: prompt("Your Bid:")
+    }]);
+    if (!error) alert("Bid submitted and saved!");
+}
     </script>
 </body>
 </html>
